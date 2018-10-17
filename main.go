@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/eczarny/lexer"
 )
 
 func main() {

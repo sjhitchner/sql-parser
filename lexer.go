@@ -1,15 +1,19 @@
 package main
 
 import (
-//"fmt"
+	"fmt"
 )
 
 const (
 	itemError itemType = iota
 	itemEOF
 	itemCreate
-	itemName
-	itemType
+	itemIfNotExists
+	itemLeftPara
+	itemRightPara
+	itemTableName
+	itemFieldName
+	itemFieldType
 )
 
 type itemType int
@@ -34,7 +38,7 @@ func (i item) String() string {
 	return fmt.Sprintf("%q", i.value)
 }
 
-type stateFn func(*lexer) stateFn
+type stateFn func(*Lexer) stateFn
 
 type Lexer struct {
 	name  string    // used only for error reports.
@@ -42,21 +46,16 @@ type Lexer struct {
 	start int       // start position of this item.
 	pos   int       // current position in the input.
 	width int       // width of last rune read from input.
+	state stateFn   // current state
 	items chan item // channel of scanned items.
 }
 
-func run() {
-	for state := startState; state != nil; {
-		state = state(lexer)
-	}
-}
-
 // lex creates a new scanner for the input string.
-func NewLexer(name, input string) *lexer {
+func NewLexer(name, input string) *Lexer {
 	l := &Lexer{
 		name:  name,
 		input: input,
-		state: lexText,
+		state: lexFindTable,
 		items: make(chan item, 2), // Two items sufficient.
 	}
 	return l
@@ -74,16 +73,55 @@ func (l *Lexer) NextItem() item {
 	panic("not reached")
 }
 
-/*
-func (l *lexer) run() {
-	for state := lexText; state != nil; {
-		state = state(l)
-	}
-	close(l.items) // No more tokens will be delivered.
-}
-*/
-
-func (l *lexer) Emit(t itemType) {
+func (l *Lexer) Emit(t itemType) {
 	l.items <- item{t, l.input[l.start:l.pos]}
 	l.start = l.pos
+}
+
+// next returns the next rune in the input.
+func (l *Lexer) next() (rune int) {
+	if l.pos >= len(l.input) {
+		l.width = 0
+		return eof
+	}
+	rune, l.width =
+		utf8.DecodeRuneInString(l.input[l.pos:])
+	l.pos += l.width
+	return rune
+}
+
+// peek returns but does not consume
+// the next rune in the input.
+func (l *Lexer) peek() int {
+	rune := l.next()
+	l.backup()
+	return rune
+}
+
+// ignore skips over the pending input before this point.
+func (l *Lexer) ignore() {
+	l.start = l.pos
+}
+
+// backup steps back one rune.
+// Can be called only once per call of next.
+func (l *Lexer) backup() {
+	l.pos -= l.width
+}
+
+// accept consumes the next rune
+// if it's from the valid set.
+func (l *Lexer) accept(valid string) bool {
+	if strings.IndexRune(valid, l.next()) >= 0 {
+		return true
+	}
+	l.backup()
+	return false
+}
+
+// acceptRun consumes a run of runes from the valid set.
+func (l *Lexer) acceptRun(valid string) {
+	for strings.IndexRune(valid, l.next()) >= 0 {
+	}
+	l.backup()
 }

@@ -1,7 +1,8 @@
 package main
 
 import (
-//"fmt"
+	//"fmt"
+	"strings"
 )
 
 const (
@@ -12,6 +13,8 @@ const (
 	sqlComma         = ","
 	sqlSemiColon     = ";"
 	sqlInteger       = "INTEGER"
+	sqlVarChar       = "VARCHAR"
+	sqlFloat         = "FLOAT"
 	sqlPrimaryKey    = "PRIMARY KEY"
 	sqlAutoIncrement = "AUTOINCREMENT"
 	sqlText          = "TEXT"
@@ -25,7 +28,7 @@ const (
 	sqlOnDelete      = "ON DELETE"
 )
 
-func lexFindTable(l *lexer) stateFn {
+func lexFindTable(l *Lexer) stateFn {
 	for {
 		if strings.HasPrefix(l.input[l.pos:], sqlCreate) {
 			if l.pos > l.start {
@@ -45,4 +48,10 @@ func lexFindTable(l *lexer) stateFn {
 
 	l.Emit(itemEOF) // Useful to make EOF a token.
 	return nil      // Stop the run loop.
+}
+
+func lexLeftMeta(l *Lexer) stateFn {
+	l.pos += len(leftMeta)
+	l.emit(itemLeftMeta)
+	return lexInsideAction // Now inside {{ }}.
 }
