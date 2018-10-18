@@ -2,19 +2,19 @@ package main
 
 import (
 	"fmt"
-	"github.com/eczarny/lexer"
+	"github.com/sjhitchner/lexer"
 )
 
 func main() {
 
-	lexer := NewLexer("", schema)
+	l := lexer.NewLexer(schema, lexCreate)
 
 	for {
-		item := lexer.NextItem()
-		if item == itemEOF {
+		token := l.NextToken()
+		if token.Type == lexer.TokenEOF || token.Type == lexer.TokenError {
 			break
 		}
-		fmt.Println(item)
+		fmt.Println(token)
 	}
 }
 
