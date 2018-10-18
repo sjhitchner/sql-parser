@@ -59,22 +59,24 @@ func (l *Lexer) PreviousToken() Token
 */
 
 func lexCreate(l *Lexer) StateFunc {
+	for {
+		if l.Matches(sqlCreate) {
+			fmt.Println("CREATE")
+			l.Emit(TokenCreate)
+			return lexCreateType
+		}
 
-	if l.Matches(sqlCreate) {
-		fmt.Println("CREATE")
-		l.Emit(TokenCreate)
-		return lexCreateType
-	}
-
-	if l.Next() == EOF {
-		l.Emit(TokenEOF) // Useful to make EOF a token.
-		return nil
+		if l.Next() == EOF {
+			break
+		}
+		l.Ignore()
 	}
 
 	// Correctly reached EOF.
 	//if l.CurrentPosition > start {
 	//	l.Emit(TokenText)
 	//}
+	l.Emit(TokenEOF) // Useful to make EOF a token.
 	l.Emit(TokenEOF) // Useful to make EOF a token.
 	l.Emit(TokenEOF) // Useful to make EOF a token.
 	l.Emit(TokenEOF) // Useful to make EOF a token.
